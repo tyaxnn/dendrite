@@ -1,89 +1,74 @@
 pub mod update{
     use nannou::prelude::*;
-    use crate::dendrite_model::model::Model;
+    use std::collections::HashMap;
+    use crate::{dendrite_model::model::*, dendrite_setting::setting::VEROCITY};
 
     pub fn dd_update(_app: &App, model: &mut Model, _update: Update) {
         let mut next_key = model.nodes.nodesmap.len() as u32;
 
-        let mut new_active_keys = Vec::new();
-        let mut dead = Vec::new();
+        let mut new_positions = Vec::new();
+        let mut new_keys = Vec::new();
+        
+        //calculate sum direction each nodes
+        let mut which_node = HashMap::new();
 
-        for i in 0..model.nodes.active.len(){
-
-            let active_key = model.nodes.active[i];
-            let position = *model.nodes.nodesmap.get(&active_key).unwrap();
-
-            match cal_ave_dir(&mut model.attractors, position){
-                Some(dir) => {
-                    //update nodes
-                    model.nodes.nodesmap.insert(next_key, position+dir);
-                    model.nodes.connection.push((active_key,next_key));
-                    new_active_keys.push(next_key);
-                    next_key +=1;
-                }
-                None => {
-                    dead.push(i);
-                }
-            }
-            
+        for ainfo in &model.attractors{
+            let old_sum_dir = which_node.entry(ainfo.nest_k).or_insert(vec2(0.,0.));
+            *old_sum_dir += {
+                let dir = ainfo.pos - model.nodes.nodesmap.get(&ainfo.nest_k).unwrap().pos;
+                dir * VEROCITY
+            };
         }
 
-        //update active lists
-        dead.reverse();
-        for index in dead{
-            model.nodes.active.remove(index);
+        //create new node
+        for (key , sum_dir) in which_node{
+
+            let parent_ninfo = model.nodes.nodesmap.get(&key).unwrap();
+
+            //update Nodesmap
+
+            let new_pos = {
+                let ave_dir = sum_dir / parent_ninfo.nest_c as f32;
+                parent_ninfo.pos + ave_dir
+            };
+            
+            model.nodes.nodesmap.insert(next_key, 
+                Ninfo { 
+                    pos: new_pos,
+                    nest_c: 0 
+                }
+            );
+
+            //update connection
+            model.nodes.connection.push((key,next_key));
+
+            //save new node info 
+            new_positions.push(new_pos);
+            new_keys.push(next_key);
+
+            next_key += 1;
         }
 
         //kill attractors
-        for key in &new_active_keys{
-            let pos = model.nodes.nodesmap.get(key).unwrap();
-
-            kill_attractors(&mut model.attractors, *pos)
+        for new_pos in new_positions{
+            kill_attractors(&mut model.attractors, new_pos);
         }
 
-        model.nodes.active.append(&mut new_active_keys);
-
-        
-
-        println!("{},{}",model.nodes.active.len(),model.attractors.len());
+        //update info
+        for new_key in new_keys{
+            update_info(model, new_key);
+        }
     }
 
-    fn cal_ave_dir(attractors: &Vec<Vec2>, node_position : Vec2) -> Option<Vec2>{
+    
 
-        let mut sum_dir = vec2(0., 0.);
-        let mut near_count = 0;
-
-        for i in 0..attractors.len(){
-
-            let dir = attractors[i] - node_position;
-            if dir.length() < 100.{
-                sum_dir += dir;
-                near_count += 1;
-            }
-        }
-
-        if near_count == 0{None}
-        else {
-
-            let ave_dir = sum_dir / (near_count as f32);
-
-            if ave_dir.length() > 10.{
-                Some(ave_dir)
-            }
-            else{None}
-            
-        
-        }
-            
-    }
-
-    fn kill_attractors(attractors : &mut Vec<Vec2> , new_position : Vec2){
+    fn kill_attractors(attractors : &mut Vec<Ainfo> , new_pos : Vec2){
 
         let mut kill_list = Vec::new();
 
         for i in 0..attractors.len(){
 
-            let dis = attractors[i] - new_position;
+            let dis = attractors[i].pos - new_pos;
 
             if dis.length() < 10.{
                 kill_list.push(i);

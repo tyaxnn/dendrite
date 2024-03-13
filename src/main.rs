@@ -1,7 +1,7 @@
 mod dendrite_model;
 mod dendrite_update;
 mod dendrite_view;
-mod prim;
+mod dendrite_setting;
 
 use dendrite_model::model::*;
 use dendrite_update::update::*;
