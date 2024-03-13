@@ -15,7 +15,7 @@ pub mod view{
         if TEST{
             view_attractors(&model.attractors, &mut draw);
 
-            view_nodes_dot(&model.nodes.nodesmap,&mut draw);
+            //view_nodes_dot(&model.nodes.nodesmap,&mut draw);
         }
         
 

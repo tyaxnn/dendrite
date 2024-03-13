@@ -1,7 +1,8 @@
 pub mod update{
     use nannou::prelude::*;
     use std::collections::HashMap;
-    use crate::{dendrite_model::model::*, dendrite_setting::setting::VEROCITY};
+    use crate::dendrite_model::model::*;
+    use crate::dendrite_setting::setting::*;
 
     pub fn dd_update(_app: &App, model: &mut Model, _update: Update) {
         let mut next_key = model.nodes.nodesmap.len() as u32;
@@ -70,7 +71,7 @@ pub mod update{
 
             let dis = attractors[i].pos - new_pos;
 
-            if dis.length() < 10.{
+            if dis.length() < KILL_RANGE{
                 kill_list.push(i);
             }
         }
