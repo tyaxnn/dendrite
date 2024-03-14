@@ -6,6 +6,9 @@ pub mod setting{
     pub const DENSITY : f32 = 0.01;
     pub const KILL_RANGE : f32 = 30.;
 
+    pub const EXPANSION : f32 = 1.06;
+    pub const SWITCH_FRAME : u64 = 30;
+
     //display_setting
     pub const TEST : bool = true;
 

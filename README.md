@@ -11,7 +11,12 @@
     ```
 
 ### Setting
-edit dendrite_setting.rs
+edit ./src/dendrite_setting.rs
 
 ### Gallery
+
+test mode
+
+![movie0001](./movie0001.gif)
+
 ![image0001](./image0001.png)

@@ -11,13 +11,17 @@ pub mod view{
 
         let mut draw = app.draw();
 
+        let mag = model.mag;
+
 
         if TEST{
-            view_attractors(&model.attractors, &mut draw);
+            draw_attractors(&model.attractors, &mut draw, mag);
 
-            view_nodes_dot(&model.nodes.nodesmap,&mut draw);
+            draw_nodes_dot(&model.nodes.nodesmap,&mut draw, mag);
 
-            view_text(app, &model, &mut draw);
+            draw_text(app, &model, &mut draw);
+
+            draw_attraction(&model, &mut draw, mag);
 
             draw.rect()
                 .w_h(WID as f32, HEI as f32)
@@ -27,28 +31,26 @@ pub mod view{
         }
         
 
-        view_nodes_branch(&model.nodes, &mut draw);
+        draw_nodes_branch(&model.nodes, &mut draw, mag);
 
         draw.to_frame(app, &frame).unwrap();
     }
 
-    #[allow(dead_code)]
-    fn view_attractors(attractors : &Vec<Ainfo>, draw : &mut Draw) {
+    fn draw_attractors(attractors : &Vec<Ainfo>, draw : &mut Draw, mag : f32) {
 
         for i in 0..attractors.len(){
             draw.ellipse()
-                .xy(attractors[i].pos)
+                .xy(attractors[i].pos * mag)
                 .radius(1.)
                 .color(GRAY);
         }
         
     }
 
-    #[allow(dead_code)]
-    fn view_nodes_dot(nodesmap : &HashMap<u32,Ninfo>, draw : &mut Draw) {
+    fn draw_nodes_dot(nodesmap : &HashMap<u32,Ninfo>, draw : &mut Draw, mag : f32) {
         for (_key, ninfo) in nodesmap{
             draw.ellipse()
-                .xy((*ninfo).pos)
+                .xy((*ninfo).pos * mag)
                 .radius(3.)
                 .no_fill()
                 .stroke_weight(
@@ -57,12 +59,11 @@ pub mod view{
                         _ =>{1.}
                     }
                 )
-                .stroke_color(LIGHTGRAY);
+                .stroke_color(GRAY);
         }
     }
 
-    #[allow(dead_code)]
-    fn view_nodes_branch(nodes : &Nodes, draw : &mut Draw) {
+    fn draw_nodes_branch(nodes : &Nodes, draw : &mut Draw, mag : f32) {
         for i in 0..nodes.connection.len(){
             let (key1,key2) = nodes.connection[i];
 
@@ -70,14 +71,14 @@ pub mod view{
             let end_pos = (*nodes.nodesmap.get(&key2).unwrap()).pos;
 
             draw.line()
-                .start(start_pos)
-                .end(end_pos)
+                .start(start_pos * mag)
+                .end(end_pos * mag)
                 .weight(1.)
-                .color(BLACK);
+                .color(DIMGRAY);
         }
     }
 
-    fn view_text(app : &App, model : &Model, draw : &mut Draw) {
+    fn draw_text(app : &App, model : &Model, draw : &mut Draw) {
         let font_size = 12;
         let text_x = (WID/2 + (WINDOW_WID - WID)/4) as f32;
 
@@ -109,5 +110,20 @@ pub mod view{
             .font(from_file(FONT_UI_PATH).unwrap());
     } 
 
-    
+    fn draw_attraction(model : &Model, draw : &mut Draw, mag : f32) {
+        for attractor in &model.attractors{
+            let a_pos = attractor.pos;
+            match attractor.nest_k{
+                Some(key) => {
+                    let nest_p = model.nodes.nodesmap.get(&key).unwrap().pos;
+
+                    draw.line()
+                        .start(a_pos * mag)
+                        .end(nest_p * mag)
+                        .weight(0.2)
+                        .rgba8(80, 80, 80,120);
+                } 
+                None => {}};
+        }
+    }
 }

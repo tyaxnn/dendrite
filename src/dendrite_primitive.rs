@@ -1,4 +1,5 @@
 pub mod prim{
+    use nannou::prelude::*;
 
     pub fn natural_number_formatter(num : u32, length : u32) -> String {
 
@@ -22,5 +23,10 @@ pub mod prim{
         format!("{}{}",zeros,mod10)
 
 
+    }
+
+    pub fn vec2_in_rect_or_not(pos : Vec2, widf : f32, heif : f32) -> bool {
+        if pos.x.abs() > widf * 0.5 || pos.y.abs() > heif * 0.5 {false}
+        else {true}
     }
 }

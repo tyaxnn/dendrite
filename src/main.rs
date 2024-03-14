@@ -10,7 +10,11 @@ use dendrite_view::view::*;
 //use dendrite_primitive::prim::*;
 //use setting::setting::*;
 
+use std::env;
+
 fn main(){
+    env::set_var("RUST_BACKTRACE", "0");
+
     nannou::app(dd_model)
         .update(dd_update)
         .view(dd_view)

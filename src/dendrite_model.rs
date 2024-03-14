@@ -6,6 +6,8 @@ pub mod model{
     pub struct Model{
         pub nodes : Nodes,
         pub attractors : Vec<Ainfo>,
+        pub mag : f32,
+        pub next_key : u32,
     }
 
     pub struct Nodes{
@@ -42,6 +44,8 @@ pub mod model{
         let mut model = Model{
             nodes : create_one_nodes(),
             attractors : create_attractors(DENSITY),
+            mag : 1.,
+            next_key : 1,
         };
 
         //initialize information
@@ -50,7 +54,7 @@ pub mod model{
         model
     }
 
-    fn create_attractors(density : f32) -> Vec<Ainfo> {
+    pub fn create_attractors(density : f32) -> Vec<Ainfo> {
         let mut attractors = Vec::new();
         let (widf,heif) = (WID as f32,HEI as f32);
 

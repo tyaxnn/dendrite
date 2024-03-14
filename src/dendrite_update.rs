@@ -2,16 +2,29 @@ pub mod update{
     use nannou::prelude::*;
     use std::collections::HashMap;
     use crate::dendrite_model::model::*;
+    use crate::dendrite_primitive::prim::vec2_in_rect_or_not;
     use crate::dendrite_setting::setting::*;
 
     pub fn dd_update(app: &App, model: &mut Model, _update: Update) {
         let frame = app.elapsed_frames();
-        grow(model);
+
+        if (frame/SWITCH_FRAME)%2 == 0 {
+            grow(model);
+        }
+        else if ((frame - 1)/SWITCH_FRAME)%2 == 0 {
+            g_2_e(model);
+        }
+        else if ((frame + 1)/SWITCH_FRAME)%2 == 0 {
+            e_2_g(model);
+        }
+        else {
+            expansion(model);
+        }
+        
     }
 
     fn grow(model : &mut Model) {
-        let mut next_key = model.nodes.nodesmap.len() as u32;
-
+        
         let mut new_positions = Vec::new();
         let mut new_keys = Vec::new();
         
@@ -45,7 +58,7 @@ pub mod update{
                 parent_ninfo.pos + ave_dir
             };
             
-            model.nodes.nodesmap.insert(next_key, 
+            model.nodes.nodesmap.insert(model.next_key, 
                 Ninfo { 
                     pos: new_pos,
                     nest_c: 0 
@@ -53,17 +66,18 @@ pub mod update{
             );
 
             //update connection
-            model.nodes.connection.push((key,next_key));
+            model.nodes.connection.push((key,model.next_key));
 
             //save new node info 
             new_positions.push(new_pos);
-            new_keys.push(next_key);
+            new_keys.push(model.next_key);
 
-            next_key += 1;
+            model.next_key += 1;
         }
 
         //kill attractors
         for new_pos in new_positions{
+            
             kill_attractors(model, new_pos);
         }
 
@@ -73,7 +87,7 @@ pub mod update{
         }        
     }
 
-    fn kill_attractors(model : &mut Model , new_pos : Vec2){
+    fn kill_attractors(model : &mut Model , new_pos : Vec2) {
 
         let attractors = &mut model.attractors;
         let nodemap = &mut model.nodes.nodesmap;
@@ -108,10 +122,11 @@ pub mod update{
         for (o_key, num) in decline_nest_c{
             match o_key {
                 Some(key) => {
+
                     nodemap.insert(key, {
                         Ninfo{
                             pos : nodemap.get(&key).unwrap().pos,
-                            nest_c : nodemap.get(&key).unwrap().nest_c - num
+                            nest_c : nodemap.get(&key).unwrap().nest_c - num,
                         }
                     });
                 }
@@ -121,6 +136,83 @@ pub mod update{
     }
 
     fn expansion(model : &mut Model) {
+        model.mag *= EXPANSION;
+    }
 
+    fn g_2_e(model : &mut Model) {
+        model.attractors = Vec::new();
+    }
+
+    fn e_2_g(model : &mut Model) {
+        //reset mag
+        model.mag = 1.;
+
+        model.attractors = create_attractors(DENSITY);
+
+        //renew pos and nest_c
+        expansion_node(model, EXPANSION.powf((SWITCH_FRAME - 2) as f32));
+
+        //renew connection
+        update_connection(model);
+
+        
+        /*
+        let keys : Vec<u32> = model.nodes.nodesmap.keys().into_iter().map(|x| *x).collect();
+        for key in keys{
+            update_info(model, key);
+        }
+         */
+    }
+
+    fn expansion_node(model : &mut Model , mag : f32) {
+        let mut new_nodesmap = HashMap::new();
+
+        let mut keys = Vec::new();
+
+        for (key ,ninfo) in &model.nodes.nodesmap {
+            let pos = ninfo.pos * mag;
+
+            if vec2_in_rect_or_not(pos, WID as f32 * 1.5, HEI as f32 * 1.2) {
+            //if *key % 900 != 899{
+                new_nodesmap.insert(*key, 
+                    Ninfo{
+                        pos,
+                        nest_c : 0,
+                    }
+                );
+
+                keys.push(*key);
+            }
+
+            
+        }
+
+        model.nodes.nodesmap = new_nodesmap;
+
+        for key in keys{
+            update_info(model, key)
+        }
+    }
+
+    fn update_connection(model : &mut Model) {
+        let mut new_connection = Vec::new();
+
+
+        for (key1,key2) in &model.nodes.connection{
+            match &model.nodes.nodesmap.get(key1) {
+                Some(_) => {
+                    match &model.nodes.nodesmap.get(key2) {
+                        Some(_) => {
+                            new_connection.push((*key1,*key2));
+                        }
+                        None => {}
+                    }
+                }
+                None => {    
+                }
+            }
+        }
+
+        model.nodes.connection = new_connection;
     }
 }
