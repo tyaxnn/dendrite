@@ -4,7 +4,12 @@ pub mod update{
     use crate::dendrite_model::model::*;
     use crate::dendrite_setting::setting::*;
 
-    pub fn dd_update(_app: &App, model: &mut Model, _update: Update) {
+    pub fn dd_update(app: &App, model: &mut Model, _update: Update) {
+        let frame = app.elapsed_frames();
+        grow(model);
+    }
+
+    fn grow(model : &mut Model) {
         let mut next_key = model.nodes.nodesmap.len() as u32;
 
         let mut new_positions = Vec::new();
@@ -14,11 +19,18 @@ pub mod update{
         let mut which_node = HashMap::new();
 
         for ainfo in &model.attractors{
-            let old_sum_dir = which_node.entry(ainfo.nest_k).or_insert(vec2(0.,0.));
-            *old_sum_dir += {
-                let dir = ainfo.pos - model.nodes.nodesmap.get(&ainfo.nest_k).unwrap().pos;
-                dir * VEROCITY
-            };
+
+            match ainfo.nest_k{
+                Some(key) => {
+                    let old_sum_dir = which_node.entry(key).or_insert(vec2(0.,0.));
+                    *old_sum_dir += {
+                        let dir = ainfo.pos - model.nodes.nodesmap.get(&key).unwrap().pos;
+                        dir * VEROCITY
+                    };
+                }
+                None => {}
+            }
+            
         }
 
         //create new node
@@ -52,20 +64,25 @@ pub mod update{
 
         //kill attractors
         for new_pos in new_positions{
-            kill_attractors(&mut model.attractors, new_pos);
+            kill_attractors(model, new_pos);
         }
 
         //update info
         for new_key in new_keys{
             update_info(model, new_key);
-        }
+        }        
     }
 
-    
+    fn kill_attractors(model : &mut Model , new_pos : Vec2){
 
-    fn kill_attractors(attractors : &mut Vec<Ainfo> , new_pos : Vec2){
+        let attractors = &mut model.attractors;
+        let nodemap = &mut model.nodes.nodesmap;
 
+        //kill attractor in this list
         let mut kill_list = Vec::new();
+
+        //if key is in this hashmap , we reduce associated nest_c 
+        let mut decline_nest_c = HashMap::new();
 
         for i in 0..attractors.len(){
 
@@ -73,6 +90,10 @@ pub mod update{
 
             if dis.length() < KILL_RANGE{
                 kill_list.push(i);
+
+                let count = decline_nest_c.entry(attractors[i].nest_k).or_insert(0);
+
+                *count += 1u32;
             }
         }
 
@@ -82,5 +103,24 @@ pub mod update{
         for index in kill_list{
             attractors.remove(index);
         }
+
+        //reduce
+        for (o_key, num) in decline_nest_c{
+            match o_key {
+                Some(key) => {
+                    nodemap.insert(key, {
+                        Ninfo{
+                            pos : nodemap.get(&key).unwrap().pos,
+                            nest_c : nodemap.get(&key).unwrap().nest_c - num
+                        }
+                    });
+                }
+                None => {}
+            }
+        }
+    }
+
+    fn expansion(model : &mut Model) {
+
     }
 }

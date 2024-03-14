@@ -27,7 +27,7 @@ pub mod model{
         //the positon of attractor.
         pub pos : Vec2,
         //the nearest node's key.
-        pub nest_k : u32,
+        pub nest_k : Option<u32>,
         //the distance between nearest node and this attractor
         pub nest_l : f32,
     }
@@ -35,15 +35,13 @@ pub mod model{
     pub fn dd_model(app: &App) -> Model{
         //create window
         app.new_window()
-            .size(WID,HEI)
+            .size(if TEST{WINDOW_WID}else{WID},if TEST{WINDOW_HEI}else{HEI})
             .build()
             .unwrap();
-
-        let attractors = create_attractors(DENSITY);
         
         let mut model = Model{
-            nodes : create_one_nodes(attractors.len() as u32),
-            attractors,
+            nodes : create_one_nodes(),
+            attractors : create_attractors(DENSITY),
         };
 
         //initialize information
@@ -62,7 +60,7 @@ pub mod model{
             attractors.push( 
                 Ainfo{
                     pos : random_vec2(widf, heif),
-                    nest_k : 0,
+                    nest_k : None,
                     nest_l : f32::MAX,
                 }
                     
@@ -74,14 +72,14 @@ pub mod model{
 
     #[allow(dead_code)]
     //create first node randamly
-    fn create_one_nodes(num_attractor : u32) -> Nodes{
+    fn create_one_nodes() -> Nodes{
 
         let mut nodesmap = HashMap::new();
         
         nodesmap.insert(0,
             Ninfo{
                 pos : random_vec2(WID as f32, HEI as f32),
-                nest_c : num_attractor,
+                nest_c : 0,
             }
         );
 
@@ -91,7 +89,7 @@ pub mod model{
         }
     }
 
-    //when add new_key in hashmap, this function updates Ainfo and Ninfo
+    //when add new_key to hashmap, this function updates Ainfo and Ninfo
     pub fn update_info(model : &mut Model , new_key : u32){
 
         let new_pos = (*model.nodes.nodesmap.get(&new_key).unwrap()).pos;
@@ -103,7 +101,7 @@ pub mod model{
 
             if model.attractors[i].nest_l > new_dis{
                 //update Ainfo
-                model.attractors[i].nest_k = new_key;
+                model.attractors[i].nest_k = Some(new_key);
                 model.attractors[i].nest_l = new_dis;
                 
                 //nest_c(new_key ++)
@@ -114,13 +112,19 @@ pub mod model{
                     }
                 );
 
-                //nest_c(old_key --)
-                model.nodes.nodesmap.insert(old_nest_k,
-                    Ninfo{
-                        pos : model.nodes.nodesmap.get(&old_nest_k).unwrap().pos,
-                        nest_c : model.nodes.nodesmap.get(&old_nest_k).unwrap().nest_c - 1
+                match old_nest_k{
+                    Some(key) => {
+                        model.nodes.nodesmap.insert(key,
+                            Ninfo{
+                                pos : model.nodes.nodesmap.get(&key).unwrap().pos,
+                                nest_c : model.nodes.nodesmap.get(&key).unwrap().nest_c - 1
+                            }
+                        );
                     }
-                );
+                    None => {}
+                }
+                //nest_c(old_key --)
+                
             }
         }
     }

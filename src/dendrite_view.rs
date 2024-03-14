@@ -1,10 +1,10 @@
 pub mod view{
     use nannou::prelude::*;
+    use nannou::text::font::from_file;
     use std::collections::HashMap;
     use crate::dendrite_model::model::{Model,Nodes,Ninfo,Ainfo};
-    use crate::dendrite_setting::*;
-
-    use self::setting::TEST;
+    use crate::dendrite_setting::setting::*;
+    use crate::dendrite_primitive::prim::*;
 
     pub fn dd_view(app: &App, model: &Model, frame: Frame) {
         frame.clear(WHITE);
@@ -15,7 +15,15 @@ pub mod view{
         if TEST{
             view_attractors(&model.attractors, &mut draw);
 
-            //view_nodes_dot(&model.nodes.nodesmap,&mut draw);
+            view_nodes_dot(&model.nodes.nodesmap,&mut draw);
+
+            view_text(app, &model, &mut draw);
+
+            draw.rect()
+                .w_h(WID as f32, HEI as f32)
+                .no_fill()
+                .stroke(GRAY)
+                .stroke_weight(1.);
         }
         
 
@@ -31,19 +39,25 @@ pub mod view{
             draw.ellipse()
                 .xy(attractors[i].pos)
                 .radius(1.)
-                .color(ORANGE);
+                .color(GRAY);
         }
         
     }
 
     #[allow(dead_code)]
     fn view_nodes_dot(nodesmap : &HashMap<u32,Ninfo>, draw : &mut Draw) {
-
         for (_key, ninfo) in nodesmap{
             draw.ellipse()
                 .xy((*ninfo).pos)
-                .radius(1.)
-                .color(SKYBLUE);
+                .radius(3.)
+                .no_fill()
+                .stroke_weight(
+                    match ninfo.nest_c{
+                        0 =>{0.}
+                        _ =>{1.}
+                    }
+                )
+                .stroke_color(LIGHTGRAY);
         }
     }
 
@@ -62,6 +76,38 @@ pub mod view{
                 .color(BLACK);
         }
     }
+
+    fn view_text(app : &App, model : &Model, draw : &mut Draw) {
+        let font_size = 12;
+        let text_x = (WID/2 + (WINDOW_WID - WID)/4) as f32;
+
+        //frame num
+        let now_frame = natural_number_formatter(app.elapsed_frames() as u32, 5);
+
+        draw.text(&format!("F : {}",now_frame))
+            .color(BLACK)
+            .font_size(font_size)
+            .x_y( text_x, 0.)
+            .font(from_file(FONT_UI_PATH).unwrap());
+
+        //attractor num
+        let attractors_num = natural_number_formatter(model.attractors.len() as u32, 5);
+
+        draw.text(&format!("A : {}",attractors_num))
+            .color(BLACK)
+            .font_size(font_size)
+            .x_y(text_x , -20.)
+            .font(from_file(FONT_UI_PATH).unwrap());
+
+        //node_num
+        let nodes_num = natural_number_formatter(model.nodes.nodesmap.len() as u32, 5);
+
+        draw.text(&format!("N : {}",nodes_num))
+            .color(BLACK)
+            .font_size(font_size)
+            .x_y(text_x , -40.)
+            .font(from_file(FONT_UI_PATH).unwrap());
+    } 
 
     
 }
