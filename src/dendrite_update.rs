@@ -2,14 +2,14 @@ pub mod update{
     use nannou::prelude::*;
     use std::collections::HashMap;
     use crate::dendrite_model::model::*;
-    use crate::dendrite_primitive::prim::vec2_in_rect_or_not;
+    use crate::dendrite_primitive::prim::{expansion_2d, vec2_in_rect_or_not};
     use crate::dendrite_setting::setting::*;
 
     pub fn dd_update(app: &App, model: &mut Model, _update: Update) {
         let frame = app.elapsed_frames();
 
         if (frame/SWITCH_FRAME)%2 == 0 {
-            grow(model);
+            grow(app, model);
         }
         else if ((frame - 1)/SWITCH_FRAME)%2 == 0 {
             g_2_e(model);
@@ -23,7 +23,7 @@ pub mod update{
         
     }
 
-    fn grow(model : &mut Model) {
+    fn grow(app: &App, model : &mut Model) {
         
         let mut new_positions = Vec::new();
         let mut new_keys = Vec::new();
@@ -49,6 +49,7 @@ pub mod update{
         //create new node
         for (key , sum_dir) in which_node{
 
+
             let parent_ninfo = model.nodes.nodesmap.get(&key).unwrap();
 
             //update Nodesmap
@@ -57,11 +58,19 @@ pub mod update{
                 let ave_dir = sum_dir / parent_ninfo.nest_c as f32;
                 parent_ninfo.pos + ave_dir
             };
+
+            if key == 0 {
+                model.fixed_points.push(FixedLine{
+                    pos : new_pos,
+                    generation : 0,
+                });
+            }
             
             model.nodes.nodesmap.insert(model.next_key, 
                 Ninfo { 
                     pos: new_pos,
-                    nest_c: 0 
+                    nest_c: 0,
+                    generation: app.elapsed_frames() % SWITCH_FRAME,
                 }
             );
 
@@ -127,6 +136,7 @@ pub mod update{
                         Ninfo{
                             pos : nodemap.get(&key).unwrap().pos,
                             nest_c : nodemap.get(&key).unwrap().nest_c - num,
+                            generation : nodemap.get(&key).unwrap().generation, 
                         }
                     });
                 }
@@ -137,6 +147,7 @@ pub mod update{
 
     fn expansion(model : &mut Model) {
         model.mag *= EXPANSION;
+        model.anchor = model.nodes.nodesmap.get(&0).unwrap().pos;
     }
 
     fn g_2_e(model : &mut Model) {
@@ -144,40 +155,40 @@ pub mod update{
     }
 
     fn e_2_g(model : &mut Model) {
-        //reset mag
-        model.mag = 1.;
+        
 
         model.attractors = create_attractors(DENSITY);
 
         //renew pos and nest_c
-        expansion_node(model, EXPANSION.powf((SWITCH_FRAME - 2) as f32));
+        expansion_node(model, model.mag, model.anchor);
+
+        //reset mag,anchor
+        model.mag = 1.;
+        model.anchor = vec2(0.,0.);
 
         //renew connection
         update_connection(model);
 
-        
-        /*
-        let keys : Vec<u32> = model.nodes.nodesmap.keys().into_iter().map(|x| *x).collect();
-        for key in keys{
-            update_info(model, key);
+        for i in 0..model.fixed_points.len() {
+            model.fixed_points[i].generation += 1;
         }
-         */
     }
 
-    fn expansion_node(model : &mut Model , mag : f32) {
+    fn expansion_node(model : &mut Model , mag : f32 , anchor : Vec2) {
         let mut new_nodesmap = HashMap::new();
 
         let mut keys = Vec::new();
 
         for (key ,ninfo) in &model.nodes.nodesmap {
-            let pos = ninfo.pos * mag;
+            let pos = expansion_2d(ninfo.pos, mag, anchor);
 
             if vec2_in_rect_or_not(pos, WID as f32 * 1.5, HEI as f32 * 1.2) {
-            //if *key % 900 != 899{
+
                 new_nodesmap.insert(*key, 
                     Ninfo{
                         pos,
                         nest_c : 0,
+                        generation : 0,
                     }
                 );
 

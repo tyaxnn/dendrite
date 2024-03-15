@@ -7,7 +7,9 @@ pub mod model{
         pub nodes : Nodes,
         pub attractors : Vec<Ainfo>,
         pub mag : f32,
+        pub anchor : Vec2,
         pub next_key : u32,
+        pub fixed_points : Vec<FixedLine>,
     }
 
     pub struct Nodes{
@@ -22,6 +24,8 @@ pub mod model{
         pub pos : Vec2,
         //how many attractor see this key as nearest one.
         pub nest_c : u32,
+
+        pub generation : u64,
     }
 
     //Attractor information
@@ -32,6 +36,11 @@ pub mod model{
         pub nest_k : Option<u32>,
         //the distance between nearest node and this attractor
         pub nest_l : f32,
+    }
+
+    pub struct FixedLine {
+        pub pos : Vec2,
+        pub generation : u32,
     }
 
     pub fn dd_model(app: &App) -> Model{
@@ -45,7 +54,9 @@ pub mod model{
             nodes : create_one_nodes(),
             attractors : create_attractors(DENSITY),
             mag : 1.,
+            anchor : vec2(0.,0.),
             next_key : 1,
+            fixed_points : Vec::new()
         };
 
         //initialize information
@@ -82,8 +93,9 @@ pub mod model{
         
         nodesmap.insert(0,
             Ninfo{
-                pos : random_vec2(WID as f32, HEI as f32),
+                pos : vec2(0.,0.),
                 nest_c : 0,
+                generation : 0,
             }
         );
 
@@ -112,7 +124,8 @@ pub mod model{
                 model.nodes.nodesmap.insert(new_key,
                     Ninfo{
                         pos : model.nodes.nodesmap.get(&new_key).unwrap().pos,
-                        nest_c : model.nodes.nodesmap.get(&new_key).unwrap().nest_c + 1
+                        nest_c : model.nodes.nodesmap.get(&new_key).unwrap().nest_c + 1,
+                        generation : model.nodes.nodesmap.get(&new_key).unwrap().generation
                     }
                 );
 
@@ -121,7 +134,8 @@ pub mod model{
                         model.nodes.nodesmap.insert(key,
                             Ninfo{
                                 pos : model.nodes.nodesmap.get(&key).unwrap().pos,
-                                nest_c : model.nodes.nodesmap.get(&key).unwrap().nest_c - 1
+                                nest_c : model.nodes.nodesmap.get(&key).unwrap().nest_c - 1,
+                                generation : model.nodes.nodesmap.get(&new_key).unwrap().generation
                             }
                         );
                     }

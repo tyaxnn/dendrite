@@ -29,4 +29,8 @@ pub mod prim{
         if pos.x.abs() > widf * 0.5 || pos.y.abs() > heif * 0.5 {false}
         else {true}
     }
+
+    pub fn expansion_2d(ori : Vec2, mag : f32, anchor : Vec2) -> Vec2 {
+        (ori - anchor) * mag + anchor
+    }
 }
