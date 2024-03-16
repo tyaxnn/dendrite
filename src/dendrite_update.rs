@@ -8,22 +8,25 @@ pub mod update{
     pub fn dd_update(app: &App, model: &mut Model, _update: Update) {
         let frame = app.elapsed_frames();
 
-        if (frame/SWITCH_FRAME)%2 == 0 {
-            grow(app, model);
+        if (frame as f32/SWITCH_FRAME) as u32%2 == 0 {
+            grow(model);
         }
-        else if ((frame - 1)/SWITCH_FRAME)%2 == 0 {
+        else if ((frame - 1) as f32/SWITCH_FRAME) as u32%2 == 0 {
             g_2_e(model);
         }
-        else if ((frame + 1)/SWITCH_FRAME)%2 == 0 {
+        else if ((frame + 1) as f32/SWITCH_FRAME) as u32%2 == 0 {
             e_2_g(model);
         }
         else {
             expansion(model);
         }
+
+        update_glaph(model);
         
     }
 
-    fn grow(app: &App, model : &mut Model) {
+    fn grow(model : &mut Model) {
+        model.time_scale.generation += 1;
         
         let mut new_positions = Vec::new();
         let mut new_keys = Vec::new();
@@ -70,7 +73,7 @@ pub mod update{
                 Ninfo { 
                     pos: new_pos,
                     nest_c: 0,
-                    generation: app.elapsed_frames() % SWITCH_FRAME,
+                    generation: model.time_scale.generation,
                 }
             );
 
@@ -155,7 +158,8 @@ pub mod update{
     }
 
     fn e_2_g(model : &mut Model) {
-        
+        model.time_scale.generation = 0;
+        model.time_scale.block += 1;
 
         model.attractors = create_attractors(DENSITY);
 
@@ -225,5 +229,27 @@ pub mod update{
         }
 
         model.nodes.connection = new_connection;
+    }
+
+    fn update_glaph(model : &mut Model) {
+        let attractor_num = model.attractors.len() as u32;
+        let node_num = model.nodes.nodesmap.len() as u32;
+
+        model.glaph_data.push_back({
+            GlaphData {attractor_num,node_num}
+        });
+
+        if model.glaph_data.len() > GLAPH_DATA_NUM as usize {
+            model.glaph_data.pop_front();
+        }
+
+        //update max
+        if attractor_num > model.glaph_max.attractor_max {
+            model.glaph_max.attractor_max = attractor_num;
+        }
+
+        if node_num > model.glaph_max.node_max {
+            model.glaph_max.node_max = node_num;
+        }
     }
 }

@@ -7,6 +7,10 @@ pub mod view{
     use crate::dendrite_primitive::prim::*;
 
     pub fn dd_view(app: &App, model: &Model, frame: Frame) {
+        if app.elapsed_frames() % 3 != 0 {
+            return;
+        }
+        
         frame.clear(WHITE);
 
         let mut draw = app.draw();
@@ -20,9 +24,11 @@ pub mod view{
 
             draw_nodes_dot(&model.nodes.nodesmap,&mut draw, mag, anchor);
 
-            draw_text(app, &model, &mut draw);
+            draw_texts(app, &model, &mut draw);
 
             draw_attraction(&model, &mut draw, mag, anchor);
+
+            draw_glaph(model, &mut draw);
 
             draw.rect()
                 .w_h(WID as f32, HEI as f32)
@@ -88,37 +94,39 @@ pub mod view{
         }
     }
 
-    fn draw_text(app : &App, model : &Model, draw : &mut Draw) {
-        let font_size = 12;
-        let text_x = (WID/2 + (WINDOW_WID - WID)/4) as f32;
+    fn draw_texts(app : &App, model : &Model, draw : &mut Draw) {
+
+        let text_x = WID as f32 * 0.5  + (WINDOW_WID - WID)as f32 * 0.35;
+        let text_y = (WINDOW_HEI) as f32 * -0.46;
 
         //frame num
         let now_frame = natural_number_formatter(app.elapsed_frames() as u32, 5);
-
-        draw.text(&format!("F : {}",now_frame))
-            .color(BLACK)
-            .font_size(font_size)
-            .x_y( text_x, 0.)
-            .font(from_file(FONT_UI_PATH).unwrap());
-
         //attractor num
         let attractors_num = natural_number_formatter(model.attractors.len() as u32, 5);
-
-        draw.text(&format!("A : {}",attractors_num))
-            .color(BLACK)
-            .font_size(font_size)
-            .x_y(text_x , -20.)
-            .font(from_file(FONT_UI_PATH).unwrap());
-
         //node_num
         let nodes_num = natural_number_formatter(model.nodes.nodesmap.len() as u32, 5);
+        //block
+        let block = natural_number_formatter(model.time_scale.block as u32, 5);
+        //generation
+        let generation = natural_number_formatter(model.time_scale.generation as u32, 5);
 
-        draw.text(&format!("N : {}",nodes_num))
-            .color(BLACK)
-            .font_size(font_size)
-            .x_y(text_x , -40.)
-            .font(from_file(FONT_UI_PATH).unwrap());
+        
+
+        draw_each_text(draw, text_x, text_y+80., &format!("Frames : {}",now_frame));
+        draw_each_text(draw, text_x, text_y+60., &format!("Attractors : {}",attractors_num));
+        draw_each_text(draw, text_x, text_y+40., &format!("Nodes  : {}",nodes_num));
+        draw_each_text(draw, text_x, text_y+20., &format!("Blocks : {}",block));
+        draw_each_text(draw, text_x, text_y+00., &format!("Generation : {}",generation));
     } 
+
+    fn draw_each_text(draw : &mut Draw , x : f32, y :f32, sentence : &str) {
+        draw.text(sentence)
+            .color(BLACK)
+            .font_size(12)
+            .x_y(x , y)
+            .font(from_file(FONT_UI_PATH).unwrap())
+            .right_justify();
+    }
 
     fn draw_attraction(model : &Model, draw : &mut Draw, mag : f32, anchor : Vec2) {
         for attractor in &model.attractors{
@@ -154,6 +162,40 @@ pub mod view{
                         .rgba8(69, 69, 69, alpha);
             }
             
+        }
+    }
+
+    fn draw_glaph(model : &Model ,draw : &mut Draw) {
+        let glaph_start = (WID/2 + (WINDOW_WID - WID)/16) as f32;
+        let glaph_wid = (WINDOW_WID - WID) as f32 * (0.5 - 2./16.);
+        let glaph_hei = WINDOW_HEI as f32 * 0.5;
+        let plot_x_distance = glaph_wid/GLAPH_DATA_NUM as f32;
+
+        let plox_a_distance = glaph_hei/model.glaph_max.attractor_max as f32;
+        let plox_n_distance = glaph_hei/model.glaph_max.node_max as f32;
+
+        for i in 0..model.glaph_data.len()-1 {
+            let _a1 = model.glaph_data[i].attractor_num as f32 * plox_a_distance;
+            let _a2 = model.glaph_data[i+1].attractor_num as f32 * plox_a_distance;
+            let n1 = model.glaph_data[i].node_num as f32 * plox_n_distance;
+            let n2 = model.glaph_data[i+1].node_num as f32 * plox_n_distance;
+
+            let x1 = glaph_start + i as f32 * plot_x_distance;
+            let x2 = glaph_start + (i+1) as f32 * plot_x_distance;
+
+            draw.line()
+                .start(vec2(x1, n1 - glaph_hei * 0.5))
+                .end(vec2(x2, n2 - glaph_hei * 0.5))
+                .weight(0.7)
+                .color(DIMGRAY);
+            
+            /* 
+            draw.line()
+                .start(vec2(x1, n1 - glaph_hei - 5.))
+                .end(vec2(x2, n2 - glaph_hei - 5.))
+                .weight(0.5)
+                .color(DIMGRAY);
+            */
         }
     }
 }

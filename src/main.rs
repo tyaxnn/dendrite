@@ -3,6 +3,7 @@ mod dendrite_update;
 mod dendrite_view;
 mod dendrite_setting;
 mod dendrite_primitive;
+mod dendrite_audio;
 
 use dendrite_model::model::*;
 use dendrite_update::update::*;

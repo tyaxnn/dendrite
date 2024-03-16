@@ -1,7 +1,8 @@
 pub mod model{
     use nannou::prelude::*;
-    use std::collections::HashMap;
+    use std::collections::{HashMap, VecDeque};
     use crate::dendrite_setting::setting::*;
+    use crate::dendrite_audio::audio::*;
 
     pub struct Model{
         pub nodes : Nodes,
@@ -10,6 +11,10 @@ pub mod model{
         pub anchor : Vec2,
         pub next_key : u32,
         pub fixed_points : Vec<FixedLine>,
+        pub time_scale : TimeScale,
+        pub glaph_data : VecDeque<GlaphData>,
+        pub glaph_max : GlaphMax,
+        pub stream : StreamAudio,
     }
 
     pub struct Nodes{
@@ -24,7 +29,7 @@ pub mod model{
         pub pos : Vec2,
         //how many attractor see this key as nearest one.
         pub nest_c : u32,
-
+        //node generation, this factor determine branch stroke width
         pub generation : u64,
     }
 
@@ -43,6 +48,21 @@ pub mod model{
         pub generation : u32,
     }
 
+    pub struct TimeScale {
+        pub block : u64,
+        pub generation : u64,
+    }
+
+    pub struct GlaphData {
+        pub attractor_num : u32,
+        pub node_num : u32,
+    }
+
+    pub struct GlaphMax {
+        pub attractor_max : u32,
+        pub node_max : u32,
+    }
+
     pub fn dd_model(app: &App) -> Model{
         //create window
         app.new_window()
@@ -56,7 +76,11 @@ pub mod model{
             mag : 1.,
             anchor : vec2(0.,0.),
             next_key : 1,
-            fixed_points : Vec::new()
+            fixed_points : Vec::new(),
+            time_scale : TimeScale { block : 0, generation : 0},
+            glaph_data :  VecDeque::new(),
+            glaph_max : GlaphMax { attractor_max : 0, node_max : 0},
+            stream : audio_set(),
         };
 
         //initialize information
