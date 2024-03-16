@@ -5,9 +5,10 @@ pub mod view{
     use crate::dendrite_model::model::{Model,Nodes,Ninfo,Ainfo};
     use crate::dendrite_setting::setting::*;
     use crate::dendrite_primitive::prim::*;
+    use crate::dendrite_save::save::save;
 
     pub fn dd_view(app: &App, model: &Model, frame: Frame) {
-        if app.elapsed_frames() % 3 != 0 {
+        if app.elapsed_frames() % FPS_60 as u64 != 0 {
             return;
         }
         
@@ -43,6 +44,12 @@ pub mod view{
         draw_fixed(model, &mut draw);
 
         draw.to_frame(app, &frame).unwrap();
+
+        if SAVE{
+            save(app , model);
+        }
+
+        
     }
 
     fn draw_attractors(attractors : &Vec<Ainfo>, draw : &mut Draw, mag : f32, anchor : Vec2) {

@@ -2,6 +2,8 @@ pub mod audio {
     use nannou_audio as audio;
     use nannou_audio::Buffer;
 
+    use crate::dendrite_setting::setting::MUSIC_PATH;
+
     pub struct Audio {
         sounds: Vec<audrey::read::BufFileReader>,
     }
@@ -24,7 +26,7 @@ pub mod audio {
 
         //import file
         //let path = "./assets/music/Dendrite_demo.wav";
-        let path = "./assets/music/demo.wav";
+        let path = MUSIC_PATH;
         let sound = audrey::open(path).expect("failed to load sound");
 
         stream
@@ -65,7 +67,3 @@ pub mod audio {
         }
     }
 }
-
-
-
-

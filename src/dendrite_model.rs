@@ -1,5 +1,6 @@
 pub mod model{
     use nannou::prelude::*;
+    use chrono::{DateTime,Local};
     use std::collections::{HashMap, VecDeque};
     use crate::dendrite_setting::setting::*;
     use crate::dendrite_audio::audio::*;
@@ -15,6 +16,7 @@ pub mod model{
         pub glaph_data : VecDeque<GlaphData>,
         pub glaph_max : GlaphMax,
         pub stream : StreamAudio,
+        pub runtime : DateTime<Local>,
     }
 
     pub struct Nodes{
@@ -81,6 +83,7 @@ pub mod model{
             glaph_data :  VecDeque::new(),
             glaph_max : GlaphMax { attractor_max : 0, node_max : 0},
             stream : audio_set(),
+            runtime : Local::now(),
         };
 
         //initialize information
@@ -110,7 +113,7 @@ pub mod model{
     }
 
     #[allow(dead_code)]
-    //create first node randamly
+    //create first node at (0.,0.)
     fn create_one_nodes() -> Nodes{
 
         let mut nodesmap = HashMap::new();
@@ -179,5 +182,3 @@ pub mod model{
         vec2(x, y)
     }
 }
-
-
